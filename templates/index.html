@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipMaker - Video to Clips & GIFs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .selected-file {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .status-text {
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .results {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            color: #2e7d32;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .download-btn {
+            margin-top: 15px;
+            background: #4caf50;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            font-size: 13px;
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ClipMaker</h1>
+        <p class="subtitle">Convert videos to clips and optimized GIFs</p>
+
+        <div id="uploadForm">
+            <div class="upload-area" id="uploadArea">
+                <label for="videoFile" class="file-label">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <div style="margin-top: 10px;">Click to upload or drag & drop</div>
+                    <div style="color: #999; font-size: 12px; margin-top: 5px;">
+                        Supported: MP4, MOV, AVI, MKV, WEBM (max 500MB)
+                    </div>
+                </label>
+                <input type="file" id="videoFile" accept=".mp4,.mov,.avi,.mkv,.webm">
+                <div id="selectedFile" class="selected-file" style="display: none;"></div>
+            </div>
+
+            <button id="uploadBtn" onclick="uploadVideo()" disabled>Upload & Process</button>
+        </div>
+
+        <div id="status" class="status">
+            <div class="status-text" id="statusText">Uploading...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="results"></div>
+        </div>
+
+        <div class="info">
+            <strong>What this does:</strong>
+            • Splits your video into 6-second MP4 clips<br>
+            • Creates optimized GIFs (max 20MB each)<br>
+            • Downloads everything as a single ZIP file
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('videoFile');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const selectedFileDiv = document.getElementById('selectedFile');
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const progressFill = document.getElementById('progressFill');
+        const resultsDiv = document.getElementById('results');
+
+        let currentSessionId = null;
+
+        // File selection
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFileDiv.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                selectedFileDiv.style.display = 'block';
+                uploadBtn.disabled = false;
+            }
+        }
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: [file] } });
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Upload and process
+        async function uploadVideo() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            uploadBtn.disabled = true;
+            statusDiv.classList.add('show');
+            statusText.textContent = 'Uploading...';
+            progressFill.style.width = '5%';
+            resultsDiv.innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('video', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const data = await response.json();
+                currentSessionId = data.session_id;
+
+                // Start polling for status
+                pollStatus();
+
+            } catch (error) {
+                showError('Upload failed: ' + error.message);
+                uploadBtn.disabled = false;
+            }
+        }
+
+        // Poll processing status
+        function pollStatus() {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/status/${currentSessionId}`);
+                    const data = await response.json();
+
+                    statusText.textContent = data.step;
+                    progressFill.style.width = data.progress + '%';
+
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        showResults(data);
+                    } else if (data.status === 'error') {
+                        clearInterval(interval);
+                        showError(data.step);
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    showError('Status check failed');
+                }
+            }, 1000);
+        }
+
+        // Show results
+        function showResults(data) {
+            resultsDiv.className = 'results';
+            resultsDiv.innerHTML = `
+                <strong>Processing Complete!</strong><br>
+                Generated: ${data.clips_count} clips + ${data.gifs_count} GIFs<br>
+                <button class="download-btn" onclick="downloadZip()">Download All (ZIP)</button>
+            `;
+        }
+
+        // Download ZIP
+        function downloadZip() {
+            window.location.href = `/download/${currentSessionId}`;
+            setTimeout(() => {
+                resetForm();
+            }, 2000);
+        }
+
+        // Show error
+        function showError(message) {
+            resultsDiv.className = 'results error';
+            resultsDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+            uploadBtn.disabled = false;
+        }
+
+        // Reset form
+        function resetForm() {
+            fileInput.value = '';
+            selectedFileDiv.style.display = 'none';
+            uploadBtn.disabled = true;
+            statusDiv.classList.remove('show');
+            progressFill.style.width = '0%';
+            resultsDiv.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
