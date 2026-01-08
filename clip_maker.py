@@ -23,6 +23,7 @@ def split_with_ffmpeg(input_path, output_dir, max_duration):
         "-b:a", "128k",
         "-f", "segment",
         "-segment_time", str(max_duration),
+        "-break_non_keyframes", "1",  # split at exact time, not keyframes
         "-reset_timestamps", "1",
         "-y",  # overwrite
         out_pattern
