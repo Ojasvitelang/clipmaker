@@ -11,4 +11,11 @@ sessions/*/output/
 # Media
 *.mp4
 
+# PyInstaller build artifacts
+build/
+dist/
+*.spec.bak
+*.app
 
+# macOS
+.DS_Store
